@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'todo'
+
+@options = {}
+
+def ensure_one_action
+  raise 'conflicting actions' if @options[:action]
+end
+
+OptionParser.new do |opts|
+  opts.banner = 'Usage: todo [options]'
+
+  opts.on('-i', '--init', TrueClass, 'initialize todo list file') do |i|
+    ensure_one_action
+    @options[:action] = :init
+  end
+
+  opts.on('-t', '--top', 'give the top priority') do
+    ensure_one_action
+    @options[:action] = :top
+  end
+
+  opts.on('-p', '--push', String, 'add something to todo list') do |p|
+    ensure_one_action
+    @options[:action] = :push
+  end
+
+  opts.on('--sort', 'interactively sort todo items by priority') do
+    ensure_one_action
+    @options[:action] = :sort
+  end
+
+  opts.on('-h', '--help', 'Prints this help') do
+    puts opts
+    exit
+  end
+end.parse!
+
+if @options[:action]
+  ToDo.public_send(@options[:action])
+else
+  ToDo.list_top(5)
+end
