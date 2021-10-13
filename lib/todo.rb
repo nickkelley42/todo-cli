@@ -16,7 +16,7 @@ module ToDo
     end
   end
 
-  def push
+  def add
     print 'Enter todo: '
     todo = readline
 
@@ -36,6 +36,18 @@ module ToDo
 
   def top
     File.open(TODO_FILE, 'r') { |f| puts f.readline }
+  end
+
+  def pop
+    items = File.readlines(TODO_FILE)
+
+    removed = items.shift
+    removed = removed[0...-1] if removed[-1] == "\n"
+    puts "Removing: '#{removed}'"
+
+    File.open(TODO_FILE, 'w') do |f|
+      items.each { |i| f.puts i }
+    end
   end
 
   def compare_todo(a, b)

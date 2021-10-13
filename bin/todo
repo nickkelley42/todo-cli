@@ -22,12 +22,17 @@ OptionParser.new do |opts|
     @options[:action] = :top
   end
 
-  opts.on('-p', '--push', String, 'add something to todo list') do |p|
+  opts.on('-a', '--add', String, 'add something to todo list') do |p|
     ensure_one_action
-    @options[:action] = :push
+    @options[:action] = :add
   end
 
-  opts.on('--sort', 'interactively sort todo items by priority') do
+  opts.on('-p', '--pop', 'remove top item from todo list') do
+    ensure_one_action
+    @options[:action] = :pop
+  end
+
+  opts.on('-s', '--sort', 'interactively sort todo items by priority') do
     ensure_one_action
     @options[:action] = :sort
   end
