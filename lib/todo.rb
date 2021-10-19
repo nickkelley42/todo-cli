@@ -1,5 +1,8 @@
+# frozen_string_literal: true
+
 require 'fileutils'
 
+# Stupid simple Todo list manager and sorter
 module ToDo
   TODO_FILE = File.expand_path('~/.todo')
 
@@ -42,55 +45,48 @@ module ToDo
 
   def self.sort
     items = File.readlines(TODO_FILE)
-    sorter = Sorter.new
-    shellsort(items)
+    insertion_sort(items)
 
     File.open(TODO_FILE, 'w') do |f|
       items.each { |i| f.puts i }
     end
   end
 
-  private_class_method def self.shellsort(array)
+  private_class_method def self.insertion_sort(array)
     sorter = Sorter.new
-    length = array.length
-    h = 1
-    h = 3 * h + 1 while h < length / 3
+    1.upto(array.length - 1).each do |i|
+      # don't bother with bsearch if it's already in the correct position
+      next if sorter.compare(array[i], array[i - 1]).positive?
 
-    while h >= 1
-      (h...length).each do |i|
-        j = i
-        while j >= h && sorter.compare(array[j], array[j - h]).negative?
-          swap(array, j, j - h)
-          j -= h
-        end
-      end
-
-      h /= 3
+      position = array[0, i].bsearch_index { |val| sorter.compare(array[i], val).negative? }
+      move_to_position(array, i, position) if position
     end
   end
 
-  private_class_method def self.swap(array, first, second)
-    t = array[first]
-    array[first] = array[second]
-    array[second] = t
+  private_class_method def self.move_to_position(array, from, to)
+    value = array[from]
+    array.slice!(from)
+    array.insert(to, value)
   end
 
+  # Used for building up an order of values. Asks the user to give the higher
+  # priority item if it cannot figure it out on its own.
   class Sorter
     def initialize
       @hierarchy = {}
     end
 
-    def compare(a, b)
-      find_transitive!(a, b)
-      return 1 if @hierarchy[a]&.include? b
-      return -1 if @hierarchy[b]&.include? a
+    def compare(value_a, value_b)
+      find_transitive!(value_a, value_b)
+      return 1 if @hierarchy[value_a]&.include? value_b
+      return -1 if @hierarchy[value_b]&.include? value_a
 
-      result = ask_for_higher(a, b)
+      result = ask_for_higher(value_a, value_b)
 
       if result.positive?
-        insert_hierarchy(a, b)
+        insert_hierarchy(value_a, value_b)
       else
-        insert_hierarchy(b, a)
+        insert_hierarchy(value_b, value_a)
       end
 
       result
@@ -103,13 +99,13 @@ module ToDo
       @hierarchy[higher] << lower unless @hierarchy[higher].include? lower
     end
 
-    def ask_for_higher(a, b)
+    def ask_for_higher(value_a, value_b)
       chosen = false
 
       until chosen
         puts 'Choose higher priority:'
-        puts "\t1. #{a}"
-        puts "\t2. #{b}"
+        puts "\t1. #{value_a}"
+        puts "\t2. #{value_b}"
         print '> '
         choice = gets.chomp.to_i
         chosen = [1, 2].include? choice
@@ -118,9 +114,9 @@ module ToDo
       choice == 1 ? -1 : 1
     end
 
-    def find_transitive!(a, b)
-      insert_hierarchy(a, b) if downward_path_exists?(a, b)
-      insert_hierarchy(b, a) if downward_path_exists?(b, a)
+    def find_transitive!(value_a, value_b)
+      insert_hierarchy(value_a, value_b) if downward_path_exists?(value_a, value_b)
+      insert_hierarchy(value_b, value_a) if downward_path_exists?(value_b, value_a)
     end
 
     def downward_path_exists?(higher, lower)
