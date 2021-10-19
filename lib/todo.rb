@@ -56,9 +56,9 @@ module ToDo
     sorter = Sorter.new
     1.upto(array.length - 1).each do |i|
       # don't bother with bsearch if it's already in the correct position
-      next if sorter.compare(array[i], array[i - 1]).positive?
+      next unless sorter.less?(array[i], array[i - 1])
 
-      position = array[0, i].bsearch_index { |val| sorter.compare(array[i], val).negative? }
+      position = array[0, i].bsearch_index { |val| sorter.less?(array[i], val) }
       move_to_position(array, i, position) if position
     end
   end
@@ -76,6 +76,12 @@ module ToDo
       @hierarchy = {}
     end
 
+    def less?(value_a, value_b)
+      compare(value_a, value_b).negative?
+    end
+
+    private
+
     def compare(value_a, value_b)
       find_transitive!(value_a, value_b)
       return 1 if @hierarchy[value_a]&.include? value_b
@@ -91,8 +97,6 @@ module ToDo
 
       result
     end
-
-    private
 
     def insert_hierarchy(higher, lower)
       @hierarchy[higher] ||= []
