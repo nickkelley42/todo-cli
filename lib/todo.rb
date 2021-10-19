@@ -43,11 +43,36 @@ module ToDo
   def self.sort
     items = File.readlines(TODO_FILE)
     sorter = Sorter.new
-    items.sort! { |a, b| sorter.compare(a, b) }
+    shellsort(items)
 
     File.open(TODO_FILE, 'w') do |f|
       items.each { |i| f.puts i }
     end
+  end
+
+  private_class_method def self.shellsort(array)
+    sorter = Sorter.new
+    length = array.length
+    h = 1
+    h = 3 * h + 1 while h < length / 3
+
+    while h >= 1
+      (h...length).each do |i|
+        j = i
+        while j >= h && sorter.compare(array[j], array[j - h]).negative?
+          swap(array, j, j - h)
+          j -= h
+        end
+      end
+
+      h /= 3
+    end
+  end
+
+  private_class_method def self.swap(array, first, second)
+    t = array[first]
+    array[first] = array[second]
+    array[second] = t
   end
 
   class Sorter
